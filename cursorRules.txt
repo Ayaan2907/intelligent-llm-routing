@@ -12,7 +12,7 @@
   - Use composition and higher-order patterns to reduce file complexity.
 
   Standard.js Rules
-  - Use 2 space indentation.
+  - Use 4 space indentation.
   - Use single quotes for strings except to avoid escaping.
   - No semicolons (unless required to disambiguate statements).
   - No unused variables.
