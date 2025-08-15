@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     logger.info("POST /api/chat - Request started");
 
     const body = await request.json();
-    const { message } = body;
+    const { message, promptProps } = body;
 
     if (!message || typeof message !== 'string') {
       logger.warn("POST /api/chat - Invalid message format", { body });
@@ -45,7 +45,8 @@ export async function POST(request: Request) {
 
     logger.info("POST /api/chat - Processing message", { 
       messageLength: message.length,
-      preview: message.substring(0, 50) + (message.length > 50 ? '...' : '')
+      preview: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
+      promptProps
     });
 
     // Simulate processing delay

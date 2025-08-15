@@ -16,7 +16,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, promptProps: PromptProperties) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -34,7 +34,7 @@ export default function ChatPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: content }),
+        body: JSON.stringify({ message: content, promptProps }),
       })
 
       if (!response.ok) {

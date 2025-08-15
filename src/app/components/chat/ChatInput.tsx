@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Square } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import MessagesProperties, { PromptProperties } from '@/app/components/chat/MessagesProperties'
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void
+  onSendMessage: (message: string, promptProps: PromptProperties) => void
   isLoading?: boolean
   onStop?: () => void
   placeholder?: string
@@ -18,15 +19,27 @@ export function ChatInput({
   placeholder = "Type your message..." 
 }: ChatInputProps) {
   const [message, setMessage] = useState('')
+  const [currentProperties, setCurrentProperties] = useState<PromptProperties>({
+    accuracy: 7,
+    cost: 5,
+    speed: 6,
+    tokenLimit: 2000,
+    temperature: 0.7,
+    reasoning: false
+  })
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (message.trim() && !isLoading) {
-      onSendMessage(message.trim())
+      onSendMessage(message.trim(), currentProperties)
       setMessage('')
       resetTextareaHeight()
     }
+  }
+
+  const handlePropertiesChange = (properties: PromptProperties) => {
+    setCurrentProperties(properties)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -54,8 +67,10 @@ export function ChatInput({
   }, [message])
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+    <div className="bg-white dark:bg-gray-900 ">
+      <MessagesProperties onPropertiesChange={handlePropertiesChange} />
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
         <div className="relative flex items-end gap-3 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 focus-within:border-blue-500 dark:focus-within:border-blue-400 transition-colors">
           <textarea
             ref={textareaRef}
@@ -96,15 +111,16 @@ export function ChatInput({
           </div>
         </div>
         
-        <div className="flex items-center justify-between mt-2 px-2">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Press Enter to send, Shift+Enter for new line
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {message.length}/2000
-          </p>
-        </div>
-      </form>
+          <div className="flex items-center justify-between mt-2 px-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Press Enter to send, Shift+Enter for new line
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {message.length}/2000
+            </p>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
