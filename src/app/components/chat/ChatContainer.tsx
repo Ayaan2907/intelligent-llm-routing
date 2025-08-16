@@ -2,13 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 import { ChatMessage } from './ChatMessage'
+import { Message } from '@/types/chat'
 
-interface Message {
-  id: string
-  content: string
-  isUser: boolean
-  timestamp: Date
-}
 
 interface ChatContainerProps {
   messages: Message[]
@@ -55,6 +50,7 @@ export function ChatContainer({ messages, isLoading = false }: ChatContainerProp
                 message={message.content}
                 isUser={message.isUser}
                 timestamp={message.timestamp}
+                modelInfo={message.modelInfo}
               />
             ))}
             

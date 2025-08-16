@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Square } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import MessagesProperties, { PromptProperties } from '@/app/components/chat/MessagesProperties'
+import { PromptProperties } from '@/types/chat'
+import MessagesProperties from './MessagesProperties'
 
 interface ChatInputProps {
   onSendMessage: (message: string, promptProps: PromptProperties) => void
@@ -24,7 +25,6 @@ export function ChatInput({
     cost: 5,
     speed: 6,
     tokenLimit: 2000,
-    temperature: 0.7,
     reasoning: false
   })
   const textareaRef = useRef<HTMLTextAreaElement>(null)

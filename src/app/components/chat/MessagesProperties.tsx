@@ -6,15 +6,8 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { PromptProperties } from '@/types/chat'
 
-export interface PromptProperties {
-  accuracy: number
-  cost: number
-  speed: number
-  tokenLimit: number
-  temperature: number
-  reasoning: boolean
-}
 
 interface MessagesPropertiesProps {
   onPropertiesChange: (properties: PromptProperties) => void
@@ -26,7 +19,6 @@ export default function MessagesProperties({ onPropertiesChange }: MessagesPrope
     cost: 5,
     speed: 6,
     tokenLimit: 2000,
-    temperature: 0.7,
     reasoning: false  
   })
 
@@ -165,16 +157,6 @@ export default function MessagesProperties({ onPropertiesChange }: MessagesPrope
                 color="red"
               />
               
-              <SliderControl
-                label="Temperature"
-                value={properties.temperature}
-                onChange={(value) => updateProperty('temperature', value)}
-                min={0}
-                max={2}
-                step={0.1}
-                icon={Settings}
-                color="purple"
-              />
             </div>
           </div>
           
@@ -211,25 +193,25 @@ export default function MessagesProperties({ onPropertiesChange }: MessagesPrope
           <div className="flex items-center gap-2 pt-2">
             <span className="text-xs text-gray-500 dark:text-gray-400">Quick presets:</span>
             <button
-              onClick={() => setProperties({ accuracy: 9, cost: 2, speed: 4, tokenLimit: 4000, temperature: 0.3, reasoning: false })}
+              onClick={() => setProperties({ accuracy: 9, cost: 2, speed: 4, tokenLimit: 4000, reasoning: false })}
               className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
             >
               High Accuracy
             </button>
             <button
-              onClick={() => setProperties({ accuracy: 5, cost: 6, speed: 9, tokenLimit: 1000, temperature: 0.8, reasoning: properties.reasoning })}
+              onClick={() => setProperties({ accuracy: 5, cost: 6, speed: 9, tokenLimit: 1000, reasoning: properties.reasoning })}
               className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
             >
               Fast
             </button>
             <button
-              onClick={() => setProperties({ accuracy: 6, cost: 9, speed: 5, tokenLimit: 1500, temperature: 0.6, reasoning: properties.reasoning })}
+              onClick={() => setProperties({ accuracy: 6, cost: 9, speed: 5, tokenLimit: 1500, reasoning: properties.reasoning })}
               className="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors"
             >
               Cheap
             </button>
             <button
-              onClick={() => setProperties({ accuracy: 7, cost: 5, speed: 6, tokenLimit: 2000, temperature: 0.7, reasoning: properties.reasoning })}
+              onClick={() => setProperties({ accuracy: 7, cost: 5, speed: 6, tokenLimit: 2000, reasoning: properties.reasoning })}
               className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               Balanced

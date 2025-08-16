@@ -7,9 +7,13 @@ interface ChatMessageProps {
   isUser: boolean
   timestamp: Date
   isLoading?: boolean
+  modelInfo?: {
+    model: string
+    reason: string
+  }
 }
 
-export function ChatMessage({ message, isUser, timestamp, isLoading = false }: ChatMessageProps) {
+export function ChatMessage({ message, isUser, timestamp, isLoading = false, modelInfo }: ChatMessageProps) {
   return (
     <div className={cn(
       'flex w-full mb-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300',
@@ -48,6 +52,18 @@ export function ChatMessage({ message, isUser, timestamp, isLoading = false }: C
             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
               {message}
             </p>
+          )}
+          
+          {/* Model Selection Info */}
+          {!isUser && modelInfo && (
+            <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg border-l-4 border-blue-500">
+              <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                🤖 Selected Model: <span className="font-mono text-blue-600 dark:text-blue-400">{modelInfo.model}</span>
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                💡 Reason: {modelInfo.reason}
+              </div>
+            </div>
           )}
           
           {/* Timestamp */}
