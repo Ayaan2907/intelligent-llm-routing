@@ -24,7 +24,6 @@ export function useChat() {
       isUser: false,
       timestamp: new Date()
     }
-    setMessages(prev => [...prev, aiMessage])
 
     try {
       // Step 1: Select the best model
@@ -43,6 +42,7 @@ export function useChat() {
       const modelData = await modelResponse.json()
       
       // Update message with model selection info
+      setMessages(prev => [...prev, aiMessage])
       setMessages(prev => prev.map(msg => 
         msg.id === aiMessageId 
           ? { ...msg, modelInfo: { model: modelData.model, reason: modelData.reason } }

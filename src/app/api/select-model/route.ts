@@ -106,7 +106,7 @@ const selectBestModel = async (models: Model[], prompt: string, parameter: Promp
     userPreferences: parameter
   });
   
-  const systemPrompt = `You are an expert in selecting the best LLM for a given prompt. 
+    const systemPrompt = `You are an expert in selecting the best LLM for a given prompt. 
   
   Given the following user prompt, select the best LLM for this prompt based on the following criteria and the preferences of the user:
   
@@ -120,7 +120,7 @@ const selectBestModel = async (models: Model[], prompt: string, parameter: Promp
   </criteria>
 
   <models_available>
-  ${models.map(model => `<model>${model.name}</model>`).join('')}
+  ${models}
   </models_available>
   
   <output>
@@ -173,7 +173,10 @@ const selectBestModel = async (models: Model[], prompt: string, parameter: Promp
       throw new Error("No content received from LLM");
     }
     
-    const parsed = JSON.parse(content);
+    // Strip markdown code blocks if present
+    const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
+    
+    const parsed = JSON.parse(cleanContent);
     return {
       model: parsed.model,
       reason: parsed.reason
