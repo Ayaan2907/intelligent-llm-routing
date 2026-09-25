@@ -12,9 +12,11 @@ CI fails if demo-side selector logic reappears.
 
 ```bash
 pnpm install
-pnpm --filter llm-router-profiles build
 pnpm dev
 ```
+
+(Both `pnpm dev` and `pnpm build` compile the library to `dist/` first —
+no separate build step to remember.)
 
 Open http://localhost:3000 and chat. With no env vars at all:
 
@@ -56,7 +58,7 @@ the build with a named report. See
 ## Development
 
 ```bash
-pnpm build                # next build (demo)
+pnpm build                # library dist/ first, then the demo
 pnpm lint                 # next lint
 pnpm --filter llm-router-profiles test       # library test suite
 node --test scripts/drift-gate.test.mjs      # drift-gate script tests
