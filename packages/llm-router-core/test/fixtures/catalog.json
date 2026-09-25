@@ -1,0 +1,160 @@
+{
+  "data": [
+    {
+      "id": "stealth/space-bunny-alpha",
+      "canonical_slug": "stealth/space-bunny-alpha",
+      "name": "Stealth: Space Bunny Alpha",
+      "created": 1790000000,
+      "description": "Free flagship-class model (fixture copy of a live entry).",
+      "context_length": 1000000,
+      "architecture": {
+        "modality": "text->text",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "tokenizer": "Other",
+        "instruct_type": null
+      },
+      "pricing": { "prompt": "0", "completion": "0" },
+      "top_provider": {
+        "context_length": 1000000,
+        "max_completion_tokens": 1000000,
+        "is_moderated": false
+      },
+      "supported_parameters": [
+        "temperature",
+        "reasoning",
+        "reasoning_effort",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "bytedance-seed/seed-2.0-code",
+      "canonical_slug": "bytedance-seed/seed-2.0-code",
+      "name": "ByteDance: Seed 2.0 Code",
+      "created": 1790000000,
+      "description": "Mid-price coding model (fixture copy of a live entry).",
+      "context_length": 262144,
+      "architecture": {
+        "modality": "text->text",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "tokenizer": "Other",
+        "instruct_type": null
+      },
+      "pricing": { "prompt": "0.0000005", "completion": "0.000003" },
+      "top_provider": {
+        "context_length": 262144,
+        "max_completion_tokens": 131072,
+        "is_moderated": false
+      },
+      "supported_parameters": [
+        "temperature",
+        "reasoning",
+        "reasoning_effort",
+        "top_p"
+      ],
+      "expiration_date": "2026-11-11"
+    },
+    {
+      "id": "openai/gpt-5.5-pro",
+      "canonical_slug": "openai/gpt-5.5-pro",
+      "name": "OpenAI: GPT 5.5 Pro",
+      "created": 1790000000,
+      "description": "Premium reasoning model (fixture copy of a live entry).",
+      "context_length": 1050000,
+      "architecture": {
+        "modality": "text+image->text",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "tokenizer": "Other",
+        "instruct_type": null
+      },
+      "pricing": { "prompt": "0.00003", "completion": "0.00018" },
+      "top_provider": {
+        "context_length": 1050000,
+        "max_completion_tokens": 943718,
+        "is_moderated": false
+      },
+      "supported_parameters": [
+        "temperature",
+        "reasoning",
+        "reasoning_effort",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "openai/o1-pro",
+      "canonical_slug": "openai/o1-pro",
+      "name": "OpenAI: o1 Pro",
+      "created": 1735000000,
+      "description": "Very expensive reasoning model (fixture copy of a live entry).",
+      "context_length": 200000,
+      "architecture": {
+        "modality": "text+image->text",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "tokenizer": "Other",
+        "instruct_type": null
+      },
+      "pricing": { "prompt": "0.00015", "completion": "0.0006" },
+      "top_provider": {
+        "context_length": 200000,
+        "max_completion_tokens": 100000,
+        "is_moderated": false
+      },
+      "supported_parameters": ["temperature", "reasoning", "top_p"],
+      "expiration_date": null
+    },
+    {
+      "id": "openai/gpt-4",
+      "canonical_slug": "openai/gpt-4",
+      "name": "OpenAI: GPT-4",
+      "created": 1687824000,
+      "description": "Legacy model, expired in this fixture to exercise deprecation.",
+      "context_length": 8191,
+      "architecture": {
+        "modality": "text->text",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "tokenizer": "Other",
+        "instruct_type": null
+      },
+      "pricing": { "prompt": "0.00003", "completion": "0.00006" },
+      "top_provider": {
+        "context_length": 8191,
+        "max_completion_tokens": 8191,
+        "is_moderated": false
+      },
+      "supported_parameters": ["temperature", "top_p"],
+      "expiration_date": "2026-01-01"
+    },
+    {
+      "id": "openai/gpt-4o-mini",
+      "canonical_slug": "openai/gpt-4o-mini",
+      "name": "OpenAI: GPT-4o mini",
+      "created": 1720800000,
+      "description": "Known id with pricing withheld in this fixture (unknown-cost path).",
+      "context_length": 128000,
+      "architecture": {
+        "modality": "text->text",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "tokenizer": "Other",
+        "instruct_type": null
+      },
+      "pricing": null,
+      "top_provider": {
+        "context_length": 128000,
+        "max_completion_tokens": 16383,
+        "is_moderated": false
+      },
+      "supported_parameters": ["temperature", "top_p"],
+      "expiration_date": null
+    },
+    {
+      "name": "broken entry with no id"
+    }
+  ]
+}

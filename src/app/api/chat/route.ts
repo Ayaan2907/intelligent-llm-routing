@@ -5,7 +5,7 @@ import { openRouter } from "@/utils/openai";
 
 const logger = new Logger("API:Chat");
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     logger.info("GET /api/chat - Request started");
 

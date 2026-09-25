@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ComponentType } from 'react'
 import { Settings, Zap, DollarSign, Target, Hash } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
@@ -51,7 +51,7 @@ export default function MessagesProperties({ onPropertiesChange }: MessagesPrope
     min?: number
     max?: number
     step?: number
-    icon: any
+    icon: ComponentType<{ className?: string }>
     color?: string
   }) => (
     <div className="flex items-center gap-3 py-2">

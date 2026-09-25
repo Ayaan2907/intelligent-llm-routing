@@ -10,8 +10,10 @@ const envSchema = z.object({
   OPEN_ROUTER_API_KEY: z.string(),
 });
 
+type Env = z.infer<typeof envSchema>;
+
 // Function to validate environment variables
-const validateEnv = () => {
+const validateEnv = (): Env => {
   try {
     logger.info("Validating environment variables");
     const env = {
@@ -36,4 +38,16 @@ const validateEnv = () => {
   }
 };
 
-export const env = validateEnv();
+let cachedEnv: Env | null = null;
+
+/**
+ * Lazy, cached env access. Validation runs at first property read — request
+ * time — never at module scope, so importing (and building) the app with zero
+ * env vars set never crashes. Demo mode depends on this.
+ */
+export const env: Env = new Proxy({} as Env, {
+  get(_target, prop) {
+    cachedEnv ??= validateEnv();
+    return cachedEnv[prop as keyof Env];
+  },
+});
