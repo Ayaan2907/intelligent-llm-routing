@@ -1,0 +1,57 @@
+{
+  "name": "llm-router-profiles",
+  "version": "0.1.0",
+  "description": "Portable LLM preference profiles with a live, drift-checked model catalog and pluggable selector backends.",
+  "license": "MIT",
+  "author": "Ayaan Kaifullah <kaifullah7921@gmail.com>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ayaan2907/intelligent-llm-routing.git",
+    "directory": "packages/llm-router-profiles"
+  },
+  "bugs": {
+    "url": "https://github.com/Ayaan2907/intelligent-llm-routing/issues"
+  },
+  "homepage": "https://github.com/Ayaan2907/intelligent-llm-routing/tree/main/packages/llm-router-profiles",
+  "keywords": [
+    "llm",
+    "router",
+    "model-selection",
+    "preference-profiles",
+    "openrouter",
+    "model-catalog",
+    "cost",
+    "ai"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run test && npm run typecheck && npm run build"
+  },
+  "dependencies": {
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.0.0"
+  }
+}

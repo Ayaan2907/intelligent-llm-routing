@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Logger } from "@/utils/logger";
-import { openRouter } from "@/utils/openai";
-
+import { isRoutingError } from "llm-router-profiles";
+import { getRouter, profileFromPromptProps } from "@/lib/router";
 
 const logger = new Logger("API:Chat");
 
@@ -12,7 +12,7 @@ export async function GET() {
     const response = {
       message: "Chat API is running",
       status: "healthy",
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     logger.info("GET /api/chat - Request completed successfully");
@@ -23,31 +23,31 @@ export async function GET() {
       error: error instanceof Error ? error.message : "Unknown error",
     });
 
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
+/**
+ * POST /api/chat — complete a prompt on the model the router selected. The
+ * call goes through the library's OpenRouter passthrough so usage and cost
+ * come from the live catalog pricing — not a per-token guess.
+ */
 export async function POST(request: Request) {
   const startTime = Date.now();
-  const requestId = `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+  const requestId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
   try {
     logger.info("POST /api/chat - Request started", { requestId });
 
     const body = await request.json();
     const { message, promptProps, selectedModel } = body;
 
-    // Input validation with detailed logging
-    if (!message || typeof message !== 'string') {
-      logger.warn("POST /api/chat - Invalid message format", { 
+    if (!message || typeof message !== "string") {
+      logger.warn("POST /api/chat - Invalid message format", {
         requestId,
         messageType: typeof message,
         messageLength: message?.length || 0,
         hasSelectedModel: !!selectedModel,
-        body: JSON.stringify(body).substring(0, 200)
       });
       return NextResponse.json(
         { error: "Message is required and must be a string" },
@@ -55,13 +55,12 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!selectedModel || typeof selectedModel !== 'string') {
-      logger.warn("POST /api/chat - Invalid selectedModel format", { 
+    if (!selectedModel || typeof selectedModel !== "string") {
+      logger.warn("POST /api/chat - Invalid selectedModel format", {
         requestId,
         selectedModelType: typeof selectedModel,
         selectedModelValue: selectedModel,
         receivedKeys: Object.keys(body),
-        body: JSON.stringify(body).substring(0, 200)
       });
       return NextResponse.json(
         { error: "selectedModel is required and must be a string" },
@@ -69,85 +68,82 @@ export async function POST(request: Request) {
       );
     }
 
-    logger.info("POST /api/chat - Processing chat request", { 
+    logger.info("POST /api/chat - Processing chat request", {
       requestId,
       messageLength: message.length,
-      messagePreview: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
       selectedModel,
-      promptProps: promptProps ? {
-        accuracy: promptProps.accuracy,
-        cost: promptProps.cost,
-        speed: promptProps.speed,
-        tokenLimit: promptProps.tokenLimit,
-        reasoning: promptProps.reasoning
-      } : undefined
     });
 
-    // Create response with the selected model
+    if (!promptProps) {
+      return NextResponse.json(
+        { error: "promptProps is required to build the routing profile" },
+        { status: 400 }
+      );
+    }
+
     const llmCallStart = Date.now();
-    
-    logger.info("POST /api/chat - Calling selected model", {
-      requestId,
-      selectedModel,
-      messageTokenEstimate: Math.ceil(message.length / 4) // rough token estimate
-    });
-    
-    const response = await openRouter.chat.completions.create({
+    const reply = await getRouter().chat(message, profileFromPromptProps(promptProps), {
       model: selectedModel,
-      messages: [
-        {
-          role: "user",
-          content: message
-        }
-      ]
     });
-
     const llmCallDuration = Date.now() - llmCallStart;
     const totalDuration = Date.now() - startTime;
-    const aiResponse = response.choices[0]?.message?.content;
 
     logger.info("POST /api/chat - Response generated successfully", {
       requestId,
-      selectedModel,
+      selectedModel: reply.model,
       llmCallDurationMs: llmCallDuration,
       totalDurationMs: totalDuration,
-      responseLength: aiResponse?.length || 0,
-      responseLatency: llmCallDuration > 10000 ? 'HIGH' : llmCallDuration > 5000 ? 'MEDIUM' : 'LOW',
-      tokensUsed: response.usage ? {
-        prompt: response.usage.prompt_tokens,
-        completion: response.usage.completion_tokens,
-        total: response.usage.total_tokens,
-        costEstimate: response.usage.total_tokens * 0.00001 // rough cost estimate
-      } : undefined
+      responseLength: reply.text.length,
+      tokensUsed: reply.meta.usage ?? undefined,
+      costUsd: reply.meta.costUsd ?? undefined,
+      costNote: reply.meta.provenance.costNote,
+      provenance: reply.meta.provenance,
     });
 
-    if (!aiResponse) {
-      logger.warn("POST /api/chat - Empty response from model", {
-        requestId,
-        selectedModel,
-        responseChoices: response.choices.length
-      });
+    if (reply.text.length === 0) {
+      logger.warn("POST /api/chat - Empty response from model", { requestId, selectedModel });
     }
 
     return NextResponse.json({
-      response: aiResponse || "No response generated",
+      response: reply.text,
+      model: reply.model,
+      usage: reply.meta.usage,
+      costUsd: reply.meta.costUsd,
+      costNote: reply.meta.provenance.costNote ?? null,
+      provenance: reply.meta.provenance,
       timestamp: new Date().toISOString(),
-      messageId: Date.now().toString()
+      messageId: Date.now().toString(),
     });
   } catch (error) {
     const totalDuration = Date.now() - startTime;
-    
+
+    if (isRoutingError(error)) {
+      // Typed routing failure — surfaced, never a degraded 200 that lies.
+      logger.error("POST /api/chat - Routing failed", {
+        requestId,
+        code: error.code,
+        message: error.message,
+        totalDurationMs: totalDuration,
+      });
+      const status =
+        error.code === "MISSING_CREDENTIALS"
+          ? 503
+          : error.code === "NO_MODEL_FITS"
+            ? 422
+            : 502;
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status }
+      );
+    }
+
     logger.error("POST /api/chat - Request failed", {
       requestId,
       error: error instanceof Error ? error.message : "Unknown error",
       errorStack: error instanceof Error ? error.stack : undefined,
-      errorType: error instanceof Error ? error.constructor.name : typeof error,
-      totalDurationMs: totalDuration
+      totalDurationMs: totalDuration,
     });
 
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

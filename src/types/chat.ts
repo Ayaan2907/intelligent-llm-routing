@@ -17,12 +17,3 @@ export interface PromptProperties {
   reasoning: boolean
 }
 
-export interface Model {
-  name: string
-  description: string
-}
-
-export interface ModelSelection {
-  model: string
-  reason: string
-}

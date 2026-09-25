@@ -1,67 +1,71 @@
-# Next.js Template
+# llm-router demo — portable LLM preference profiles
 
-This is a template repository showcasing Next.js Server Actions, React Server Components, and modern data fetching patterns. The project includes a Todo list implementation and examples of API integration with proper loading states and error handling.
+The demo chat app for [`llm-router-profiles`](./packages/llm-router-profiles) —
+an open-source TypeScript library for **portable LLM preference profiles** with
+a **live, drift-checked model catalog** and **pluggable selector backends**.
 
-## Features
+The library is the product; this Next.js chat app dogfoods it: every model
+decision the demo makes — selection and chat — goes through the library, and
+CI fails if demo-side selector logic reappears.
 
-- **Todo List**: Server-side data mutations using Next.js Server Actions
-- **Data Fetching Example**: Demonstrates React Suspense and loading states
-- **Modern UI**: Built with Shadcn UI components and Tailwind CSS
-- **Error Handling**: Proper error boundaries and user feedback
-- **Type Safety**: Full TypeScript support
-
-## Tech Stack
-
-- [Next.js](https://nextjs.org) - React framework
-- [Shadcn UI](https://ui.shadcn.com/) - Component library
-- [Tailwind CSS](https://tailwindcss.com) - Styling
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
-
-## Getting Started
-
-1. Clone the repository
-2. Install dependencies:
+## Quickstart (zero API keys)
 
 ```bash
-npm install
-# or
-yarn install
-# or
 pnpm install
-```
-
-3. Set up your environment variables in the `.env` file.
-
-4. Start the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+(Both `pnpm dev` and `pnpm build` compile the library to `dist/` first —
+no separate build step to remember.)
 
-## Project Structure
+Open http://localhost:3000 and chat. With no env vars at all:
 
-- `app/page.tsx` - Main page with Todo list implementation
-- `app/example/page.tsx` - Data fetching example with loading states
-- `app/actions/*` - Server Actions for data mutations
-- `components/ui/*` - Shadcn UI components
+- **Model selection works** — deterministic scoring over OpenRouter's live
+  public catalog (no key needed to read it).
+- **Chat requires `OPEN_ROUTER_API_KEY`** — set it in `.env` for completions;
+  without it the API fails with a typed `MISSING_CREDENTIALS` error, never a
+  silent fallback.
 
-## Learn More
+For the library itself — quickstart, profile schema, selector backends, and
+comparison table — see [`packages/llm-router-profiles`](./packages/llm-router-profiles).
 
-To learn more about the technologies used in this project:
+## How routing works here
 
-- [Next.js Documentation](https://nextjs.org/docs) - Next.js features and API
-- [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions) - Learn about Next.js Server Actions
-- [Shadcn UI Documentation](https://ui.shadcn.com) - Learn about Shadcn UI components
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs) - Learn about Tailwind CSS
+| Before | After |
+| --- | --- |
+| Hardcoded list of 11 models, 2+ of them dead ids | Live catalog, 460+ validated entries, refreshed on a TTL |
+| LLM selector on a retired model id | Deterministic scoring in milliseconds, explainable `why` |
+| Silent fallback to a default model on any error | Typed `RoutingError` with machine-readable codes |
 
-## Deploy on Vercel
+The routing surface lives in [`src/lib/router.ts`](./src/lib/router.ts); the
+API routes are [`src/app/api/select-model/route.ts`](./src/app/api/select-model/route.ts)
+and [`src/app/api/chat/route.ts`](./src/app/api/chat/route.ts). Chat responses
+carry `usage` and `costUsd` computed from the live per-model pricing.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
+## Examples
 
-Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [`examples/node-script.mjs`](./examples/node-script.mjs) — bare Node, zero keys
+- [`examples/nextjs-route-handler/`](./examples/nextjs-route-handler/) — drop-in App Router route handler
+- [`examples/mcp.json`](./examples/mcp.json) — MCP client config for the upcoming MCP surface
+
+## Drift gate
+
+CI extracts every model id named in docs, examples, and demo source and
+asserts each exists in the live OpenRouter catalog — a dead id anywhere fails
+the build with a named report. See
+[`scripts/drift-gate.mjs`](./scripts/drift-gate.mjs).
+
+## Development
+
+```bash
+pnpm build                # library dist/ first, then the demo
+pnpm lint                 # next lint
+pnpm --filter llm-router-profiles test       # library test suite
+node --test scripts/drift-gate.test.mjs      # drift-gate script tests
+node scripts/drift-gate.mjs                  # live drift check
+node scripts/pack-verify.mjs                 # npm pack dry-run gate
+node scripts/no-duplicated-selector.mjs      # dogfooding gate
+```
+
+The library is MIT-licensed — see
+[`packages/llm-router-profiles/LICENSE`](./packages/llm-router-profiles/LICENSE).

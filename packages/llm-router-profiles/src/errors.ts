@@ -4,6 +4,10 @@
  * `RoutingError` carrying a machine-readable code.
  */
 
+/**
+ * Machine-readable failure codes carried by `RoutingError`. Match on these,
+ * never on message strings.
+ */
 export type RoutingErrorCode =
   | "CATALOG_UNAVAILABLE"
   | "NO_MODEL_FITS"
@@ -13,6 +17,7 @@ export type RoutingErrorCode =
   | "INVALID_RESPONSE"
   | "CONFIG_INVALID";
 
+/** All error codes, for exhaustiveness checks and docs. */
 export const ROUTING_ERROR_CODES: readonly RoutingErrorCode[] = [
   "CATALOG_UNAVAILABLE",
   "NO_MODEL_FITS",
