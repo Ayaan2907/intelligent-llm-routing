@@ -25,52 +25,85 @@ import { BackendAttempt, Selection, SelectorBackend } from "./selector/types";
  * crashes.
  */
 
+/**
+ * Catalog source. `openrouter` syncs the live public catalog with a TTL
+ * cache; `entries` pins a static catalog (demo mode, tests) with no network.
+ */
 export type CatalogConfig =
   | { source: "openrouter"; ttlMinutes?: number }
   | { entries: CatalogSnapshot["entries"] };
 
+/**
+ * Ordered selector chain entries. Strings name built-in backends; a
+ * `SelectorBackend` object plugs in a custom backend at that position.
+ */
 export type SelectorConfig = ReadonlyArray<"deterministic" | "openrouter-auto" | "llm" | SelectorBackend>;
 
+/** Router configuration. All fields optional — `createRouter()` with no args is demo mode. */
 export interface RouterConfig {
+  /** Catalog source; defaults to the live OpenRouter catalog with default TTL. */
   catalog?: CatalogConfig;
   /** Ordered fallback chain; default `["deterministic"]`. */
   selector?: SelectorConfig;
   /** Optional — required only for chat() and keyed selector backends. */
   apiKey?: string;
+  /** Injectable fetch for tests; defaults to global `fetch`. */
   fetchImpl?: typeof fetch;
 }
 
+/** Token counts reported by the completion, when the provider returned them. */
 export interface ChatUsage {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
 }
 
+/** Provenance and honest-cost metadata for a `chat()` call. */
 export interface ChatMeta {
+  /** Token usage, or null when the provider did not report it. */
   usage: ChatUsage | null;
+  /** Real cost from live catalog pricing, or null with `costNote` explaining why. */
   costUsd: { input: number; output: number; total: number } | null;
   provenance: {
+    /** The model id the upstream actually served (alias/echo), for provenance. */
     model: string;
     /** Which selector backend picked it, or "caller" when passed explicitly. */
     selectedBy: string | null;
+    /** When the catalog snapshot backing this call was fetched. */
     catalogCheckedAt: string | null;
+    /** True when the snapshot was served stale after a failed refresh. */
     catalogStale: boolean | null;
     /** Why cost is null, when it is. */
     costNote: string | null;
   };
 }
 
+/** Result of a `chat()` completion: the text, the routed model, and honest meta. */
 export interface ChatResult {
+  /** The completion text. */
   text: string;
+  /** The model id that was routed (the pick), not an upstream echo. */
   model: string;
+  /** Usage, real cost, and provenance for this call. */
   meta: ChatMeta;
 }
 
+/** The router: deterministic-first selection plus an honest chat passthrough. */
 export interface Router {
+  /**
+   * Pick a live model for `prompt` under `profile`. Throws `RoutingError`
+   * when the catalog is unreachable or no model fits — never falls back
+   * silently. Works with zero API keys (deterministic + public catalog).
+   */
   select(
     prompt: string,
     profile: ProfileInput | RouterProfile,
   ): Promise<Selection>;
+  /**
+   * Complete `prompt` with the selected (or `opts.model`) model. Requires an
+   * API key — a missing one throws typed `MISSING_CREDENTIALS`, never a
+   * degraded success. `meta` carries usage and cost from live pricing.
+   */
   chat(
     prompt: string,
     profile: ProfileInput | RouterProfile,

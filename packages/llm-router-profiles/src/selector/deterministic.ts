@@ -76,6 +76,7 @@ export function passesConstraints(
   return true;
 }
 
+/** Combined input+output price in USD per million tokens, or null when either side is unknown. */
 export function totalCostPerMTok(entry: CatalogEntry): number | null {
   if (entry.inputCostPerMTok == null || entry.outputCostPerMTok == null) return null;
   return entry.inputCostPerMTok + entry.outputCostPerMTok;

@@ -36,10 +36,16 @@ export interface CatalogSnapshot {
   droppedEntries: number;
 }
 
+/** Envelope schema for OpenRouter's public `GET /api/v1/models` response. */
 export const openRouterResponseSchema = z.object({
   data: z.array(z.unknown()),
 });
 
+/**
+ * Schema for a single OpenRouter catalog entry. Loose by design — unknown
+ * fields pass through, optional/nullish everywhere OpenRouter is inconsistent
+ * — so upstream shape drift fails soft at this boundary.
+ */
 export const openRouterEntrySchema = z.object({
   id: z.string().min(1),
   name: z.string(),
@@ -79,6 +85,11 @@ function isExpired(expiresAt: string | null): boolean {
   return Number.isFinite(t) && t <= Date.now();
 }
 
+/**
+ * Parse one raw OpenRouter entry into a `CatalogEntry`, or return null when
+ * validation fails (the entry is dropped and counted by the caller, never
+ * smuggled through unparsed).
+ */
 export function toCatalogEntry(raw: unknown): CatalogEntry | null {
   const parsed = openRouterEntrySchema.safeParse(raw);
   if (!parsed.success) return null;

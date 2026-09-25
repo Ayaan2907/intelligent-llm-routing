@@ -7,6 +7,7 @@ import { z } from "zod";
  * `RouterProfile` unchanged (idempotent).
  */
 
+/** The three reasoning policies a profile can express. */
 export const REASONING_MODES = ["never", "auto", "always"] as const;
 export type ReasoningMode = (typeof REASONING_MODES)[number];
 
@@ -19,6 +20,7 @@ export interface ProfileConstraints {
   minContext?: number;
 }
 
+/** Relative weights across the three trade-off dimensions; normalized to sum to 1. */
 export interface ProfileWeights {
   accuracy: number;
   cost: number;
@@ -51,6 +53,10 @@ const tokenBudgetSchema = z
   })
   .strict();
 
+/**
+ * The zod schema behind `defineProfile`. Exported so callers can reuse the
+ * exact validation (e.g. form validation, JSON-schema generation).
+ */
 export const profileInputSchema = z
   .object({
     name: z.string().trim().min(1).max(64),
