@@ -26,11 +26,52 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Test (llm-router-core)
-        run: pnpm --filter llm-router-core test
+      - name: Test (llm-router-profiles)
+        run: pnpm --filter llm-router-profiles test
 
-      - name: Typecheck (llm-router-core)
-        run: pnpm --filter llm-router-core typecheck
+      - name: Typecheck (llm-router-profiles)
+        run: pnpm --filter llm-router-profiles typecheck
 
       - name: Build
         run: pnpm build
+
+      - name: Demo imports the library (no duplicated selector)
+        run: node scripts/no-duplicated-selector.mjs
+
+  packaging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build library
+        run: pnpm --filter llm-router-profiles build
+
+      - name: npm pack dry-run is clean
+        run: node scripts/pack-verify.mjs
+
+  drift-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Drift-gate extractor self-tests
+        run: node --test scripts/drift-gate.test.mjs
+
+      - name: Referenced model ids exist in the live OpenRouter catalog
+        run: node scripts/drift-gate.mjs
