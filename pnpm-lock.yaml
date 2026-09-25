@@ -44,6 +44,9 @@ importers:
       groq-sdk:
         specifier: ^0.30.0
         version: 0.30.0
+      llm-router-profiles:
+        specifier: workspace:^
+        version: link:packages/llm-router-profiles
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.1.1)

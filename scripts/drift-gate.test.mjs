@@ -45,6 +45,38 @@ test("ignores letterless vendors (dates, fractions)", () => {
   assert.deepEqual(extractModelIds("dated 2026/09/25, split 1/2"), []);
 });
 
+test("ignores numeric model tails (Tailwind opacity classes)", () => {
+  assert.deepEqual(
+    extractModelIds('className="bg-black/80 slide-in-from-left-1/2 text-foreground/50"'),
+    [],
+  );
+});
+
+test("ignores module specifiers on import lines", () => {
+  assert.deepEqual(
+    extractModelIds('import { NextResponse } from "next/server";'),
+    [],
+  );
+  assert.deepEqual(
+    extractModelIds('import test from "node:test";'),
+    [],
+  );
+});
+
+test("ignores multiline-import continuation lines", () => {
+  assert.deepEqual(
+    extractModelIds('  } from "@radix-ui/react-icons";'),
+    [],
+  );
+});
+
+test("ignores explicit non-model ids like MIME types", () => {
+  assert.deepEqual(
+    extractModelIds("headers: { Accept: 'application/json' }"),
+    [],
+  );
+});
+
 test("keeps real vendors that look like path segments", () => {
   assert.deepEqual(extractModelIds("`meta-llama/llama-3.1-8b-instruct`"), [
     "meta-llama/llama-3.1-8b-instruct",

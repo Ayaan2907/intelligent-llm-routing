@@ -69,7 +69,8 @@ const router = createRouter({
 const reply = await router.chat("Summarize this paragraph.", profile);
 console.log(reply.text);
 console.log(reply.meta.usage);      // { promptTokens, completionTokens, totalTokens } | null
-console.log(reply.meta.costUsd);    // real cost from live per-model pricing, or null + costNote
+console.log(reply.meta.costUsd);    // { input, output, total } | null — live per-model pricing
+console.log(reply.meta.provenance.costNote); // why cost is null, when it is
 console.log(reply.meta.provenance); // which backend picked it, catalog freshness
 ```
 

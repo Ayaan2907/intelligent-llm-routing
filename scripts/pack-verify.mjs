@@ -19,13 +19,17 @@ if (!existsSync(join(PKG_DIR, "dist", "index.js"))) {
   process.exit(1);
 }
 
-const out = execSync("npm pack --dry-run", { cwd: PKG_DIR, encoding: "utf8" });
+// npm notice lines (including the file list) go to stderr — merge streams so
+// the parser sees them.
+const out = execSync("npm pack --dry-run 2>&1", { cwd: PKG_DIR, encoding: "utf8" });
 
-// File list lines look like: "npm notice 2.1kB  dist/index.js"
-const sizeLine = /^npm notice\s+(\S+)\s+(.+)$/gm;
+// File list lines look like: "npm notice 2.1kB  dist/index.js" — the size
+// prefix (digit-led token) distinguishes them from metadata lines such as
+// "npm notice name: ..." or "npm notice total files: 7".
+const sizeLine = /^npm notice\s+\d+(?:\.\d+)?\S*\s+(.+)$/gm;
 const files = [];
 for (const m of out.matchAll(sizeLine)) {
-  const path = m[2].trim();
+  const path = m[1].trim();
   if (path && !path.startsWith("Tarball ") && !path.endsWith(".tgz")) files.push(path);
 }
 

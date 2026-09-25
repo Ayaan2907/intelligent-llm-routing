@@ -1,0 +1,18 @@
+{
+  "$comment": [
+    "MCP client configuration for the LLM router's upcoming MCP surface.",
+    "This file anticipates the planned `llm-router-mcp` server package (spec art_MQO8wr9t puts the MCP server in a later extension, not v0.1).",
+    "Drop it into an MCP client config (Claude Desktop: claude_desktop_config.json; generic: mcp.json) once the server ships.",
+    "The profile path points at a version-controlled preference profile — the artifact this library standardizes.",
+    "OPEN_ROUTER_API_KEY is optional: selection tools work without it; chat tools require it."
+  ],
+  "mcpServers": {
+    "llm-router": {
+      "command": "npx",
+      "args": ["-y", "llm-router-mcp@latest", "--profile", "./profiles/cheap-fast.json"],
+      "env": {
+        "OPEN_ROUTER_API_KEY": "${OPEN_ROUTER_API_KEY}"
+      }
+    }
+  }
+}

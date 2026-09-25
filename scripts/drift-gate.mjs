@@ -3,20 +3,32 @@
  * Catalog drift gate — the test the audit called highest-value, aimed at
  * ourselves first.
  *
- * Every model id referenced by the README, the examples, or the demo `src/`
- * must exist in OpenRouter's live public catalog (GET /api/v1/models — no key
- * needed). A doc or example that names a dead model id fails CI with a named
- * report instead of rotting silently — the exact failure that killed the
- * original selector app.
+ * Every model id referenced by the docs (READMEs), the examples/, or the demo
+ * `src/` must exist in OpenRouter's live public catalog (GET /api/v1/models —
+ * no key needed). A doc or example that names a dead model id fails CI with a
+ * named report instead of rotting silently — the exact failure that killed
+ * the original selector app.
  *
- * The test fixture (the packages' test/fixtures/catalog.json) is deliberately
- * excluded: its ids are synthetic copies of live entries, guarded by the
- * always-on fixture-sanity unit test instead.
+ * Scope is deliberate. Library source, library tests, and scripts never
+ * catalogue a model id for users: the library tests run hermetically on
+ * synthetic fixtures (per the spec's locked decisions), so scanning them
+ * would only manufacture false positives. The gate covers the surfaces a
+ * builder reads and copies.
+ *
+ * Extraction filters out non-model lookalikes:
+ *   - import/require lines (`from "next/server"` is a module, not a model)
+ *   - numeric tails (`bg-black/80`, `slide-in-from-left-1/2` — Tailwind)
+ *   - an explicit NON_MODEL_IDS set for strings like `application/json`
+ *   - URL/path guards (hostname tails, mid-URL paths, repo segments)
+ *
+ * The test fixture (the packages' test/fixtures/catalog.json) is excluded:
+ * its ids are synthetic copies of live entries, guarded by the always-on
+ * fixture-sanity unit test instead.
  *
  * Zero dependencies (node >= 20): `node scripts/drift-gate.mjs`
  */
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, extname } from "node:path";
 
 export const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
@@ -24,11 +36,7 @@ export const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
 /** vendor/model — vendor is letters+dashes (must contain a letter), model may carry dots and colons (gpt-3.5-turbo, gpt-oss-20b:free). */
 const MODEL_ID_RE = /\b([a-z0-9][a-z0-9-]*)\/([a-z0-9][a-z0-9.:_-]*)/gi;
 
-/**
- * Generic path segments that appear in repo paths, URLs, and shell commands
- * but are never an OpenRouter vendor. With the lookbehind guards below this
- * is belt-and-suspenders; keeping it explicit makes false negatives visible.
- */
+/** Generic path segments that appear in repo paths and URLs but are never an OpenRouter vendor. */
 const DENYLISTED_VENDORS = new Set([
   "packages", "src", "test", "tests", "dist", "examples", "scripts", "app",
   "components", "lib", "hooks", "utils", "types", "config", "public", "docs",
@@ -37,28 +45,46 @@ const DENYLISTED_VENDORS = new Set([
   "org", "net", "dev", "io",
 ]);
 
+/**
+ * Strings that match the model-id shape but are never a model id. Explicit
+ * and documented — anything added here must come with a comment naming where
+ * it appears.
+ */
+const NON_MODEL_IDS = new Set([
+  "application/json", // Content-Type headers in fetch calls and curl examples
+]);
+
+/** import/require lines — module specifiers, not model ids. The last branch
+ * catches multiline-import continuation lines (`} from "@scope/pkg";`). */
+const IMPORT_LINE_RE =
+  /^\s*(?:import\b|export\s+(?:\*|{)[^;]*\bfrom\s*["']|export\s+\*\s+from|const\s+\w+\s*=\s*require\(|.*\brequire\(\s*["']|.*\bfrom\s*["'][^"']*["']\s*;?\s*$)/;
+
 const SCAN_EXTENSIONS = new Set([".ts", ".tsx", ".mjs", ".js", ".json", ".md"]);
 
-/** Directories never scanned (build output, deps, synthetic fixtures). */
+/** Directories never scanned even inside a target tree (build output, deps). */
 const SKIP_DIRS = new Set(["node_modules", "dist", ".next", ".git", "fixtures"]);
 
 /**
- * Extract candidate model ids from free text. Guards against URL and path
- * false positives: a match is skipped when the character before it is `.`
- * (tail of a hostname like openrouter.`ai`/api) or `/` (mid-URL path), or
- * when the vendor segment is denylisted or letterless (dates, fractions).
+ * Extract candidate model ids from free text, line by line so import lines
+ * can be skipped wholesale.
  */
 export function extractModelIds(text) {
   const found = new Set();
-  for (const match of text.matchAll(MODEL_ID_RE)) {
-    const start = match.index;
-    const before = start > 0 ? text[start - 1] : "";
-    if (before === "." || before === "/") continue;
-    const [, vendor, model] = match;
-    if (!/[a-z]/i.test(vendor)) continue;
-    if (DENYLISTED_VENDORS.has(vendor.toLowerCase())) continue;
-    if (DENYLISTED_VENDORS.has(model.toLowerCase())) continue;
-    found.add(`${vendor}/${model}`);
+  for (const line of text.split("\n")) {
+    if (IMPORT_LINE_RE.test(line)) continue;
+    for (const match of line.matchAll(MODEL_ID_RE)) {
+      const start = match.index;
+      const before = start > 0 ? line[start - 1] : "";
+      if (before === "." || before === "/") continue;
+      const [, vendor, model] = match;
+      if (!/[a-z]/i.test(vendor)) continue;
+      if (!/[a-z]/i.test(model)) continue; // numeric tail: Tailwind opacity, fractions, dates
+      if (DENYLISTED_VENDORS.has(vendor.toLowerCase())) continue;
+      if (DENYLISTED_VENDORS.has(model.toLowerCase())) continue;
+      const id = `${vendor}/${model}`;
+      if (NON_MODEL_IDS.has(id.toLowerCase())) continue;
+      found.add(id);
+    }
   }
   return [...found].sort();
 }
@@ -76,10 +102,12 @@ function walk(dir, out = []) {
 }
 
 /** Collect { id, files } for every model id referenced in the scanned trees. */
-export function collectReferences(roots) {
+export function collectReferences(targets) {
   const byId = new Map();
-  for (const root of roots) {
-    for (const file of walk(root)) {
+  for (const target of targets) {
+    if (!existsSync(target)) continue;
+    const files = statSync(target).isDirectory() ? walk(target) : [target];
+    for (const file of files) {
       const text = readFileSync(file, "utf8");
       for (const id of extractModelIds(text)) {
         const ref = byId.get(id) ?? { id, files: [] };
@@ -89,6 +117,26 @@ export function collectReferences(roots) {
     }
   }
   return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
+ * The scan surface: docs (READMEs), examples, and the demo app source.
+ * Deliberately NOT library src/tests or scripts — see the header comment.
+ */
+export function scanTargets(repoRoot) {
+  const targets = [
+    join(repoRoot, "README.md"),
+    join(repoRoot, "examples"),
+    join(repoRoot, "src"), // the demo app lives at the repo root
+  ];
+  const packagesDir = join(repoRoot, "packages");
+  if (existsSync(packagesDir)) {
+    for (const name of readdirSync(packagesDir)) {
+      const readme = join(packagesDir, name, "README.md");
+      if (existsSync(readme)) targets.push(readme);
+    }
+  }
+  return targets.filter((t) => existsSync(t));
 }
 
 /** Fetch the live catalog id set; 2 attempts against network flake. */
@@ -118,16 +166,11 @@ export async function fetchLiveCatalogIds(fetchImpl = fetch) {
 
 async function main() {
   const repoRoot = process.cwd();
-  const libRoot = join(repoRoot, "packages", "llm-router-profiles");
-  const roots = [repoRoot, libRoot].filter((r) => {
-    try { statSync(r); return true; } catch { return false; }
-  });
+  const refs = collectReferences(scanTargets(repoRoot));
+  console.log(`drift-gate: ${refs.length} unique model ids referenced across README, examples, and demo src`);
 
-  const refs = collectReferences(roots);
-  console.log(`drift-gate: ${refs.length} unique model ids referenced across README, examples, and src`);
-
-  if (refs.length < 3) {
-    console.error("drift-gate: FAIL — fewer than 3 ids extracted; extraction itself may be broken");
+  if (refs.length === 0) {
+    console.error("drift-gate: FAIL — no model ids extracted; extraction itself may be broken");
     process.exit(1);
   }
 
